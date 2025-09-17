@@ -26,43 +26,56 @@
         body {
             font-family: 'Poppins', sans-serif;
             color: var(--primary-color);
-            transition: background 0.8s ease-in-out;
             overflow: hidden; /* Prevents scrollbars from appearing due to animations */
-        }
-
-        /* --- Dynamic Weather Background Container --- */
-        .weather-container {
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
             position: relative;
-            z-index: 1;
+        }
+
+        /* --- Background Container with Images --- */
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            transition: opacity 1s ease-in-out;
+        }
+
+        .background-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
             background-size: cover;
             background-position: center;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
         }
 
-        /* --- Default Background --- */
-        .weather-container.default {
-            background: linear-gradient(45deg, #2c3e50, #34495e);
+        .background-image.active {
+            opacity: 1;
         }
 
-        /* --- Weather-Specific Animated Backgrounds --- */
-        .weather-container.sunny {
-            background: linear-gradient(45deg, #f39c12, #e74c3c);
-        }
-        .weather-container.cloudy {
-            background: linear-gradient(45deg, #7f8c8d, #34495e);
-        }
-        .weather-container.rainy {
-            background: linear-gradient(45deg, #2980b9, #34495e);
-        }
-        .weather-container.snowy {
-            background: linear-gradient(45deg, #bdc3c7, #7f8c8d);
-        }
-        .weather-container.misty {
-            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        /* --- Specific Background Images --- */
+        .bg-default { background-image: url('https://images.unsplash.com/photo-1542382025-a134c44243a3?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); }
+        .bg-sunny { background-image: url('https://images.unsplash.com/photo-1498496294664-d2e5a639ad85?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); }
+        .bg-cloudy { background-image: url('https://images.unsplash.com/photo-1501630834273-4b5671a50ee1?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); }
+        .bg-rainy { background-image: url('https://images.unsplash.com/photo-1534274988757-ec89ee1d3ddb?q=80&w=1958&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); }
+        .bg-snowy { background-image: url('https://images.unsplash.com/photo-1517299321689-5264bc403d07?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); }
+        .bg-misty { background-image: url('https://images.unsplash.com/photo-1548174780-da932782e21e?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'); }
+        
+        /* --- Overlay for better readability --- */
+        .background-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3); /* Darker overlay */
+            z-index: 0;
         }
 
         /* --- Glassmorphism Weather Card --- */
@@ -80,6 +93,8 @@
             transform: translateY(20px);
             opacity: 0;
             animation: fadeInCard 0.8s 0.2s forwards ease-out;
+            position: relative; /* Ensure it stays above the background */
+            z-index: 2;
         }
 
         @keyframes fadeInCard {
@@ -181,6 +196,14 @@
             font-weight: 500;
             margin: 10px 0 5px;
         }
+        
+        #localTime {
+            font-size: 1em;
+            font-weight: 300;
+            color: var(--secondary-color);
+            margin-bottom: 15px;
+        }
+
 
         #temperature {
             font-size: 4.5em;
@@ -239,36 +262,44 @@
 </head>
 <body>
     
-    <div class="weather-container default" id="weatherContainer">
-        <div class="weather-app">
-            <h1>WeatherWave</h1>
-            <div class="input-section">
-                <input type="text" id="locationInput" placeholder="Enter a City or Country">
-                <button id="getWeatherBtn">Search</button>
-            </div>
+    <div class="background-container" id="backgroundContainer">
+        <div class="background-overlay"></div>
+        <div class="background-image bg-default active" id="bgDefault"></div>
+        <div class="background-image bg-sunny" id="bgSunny"></div>
+        <div class="background-image bg-cloudy" id="bgCloudy"></div>
+        <div class="background-image bg-rainy" id="bgRainy"></div>
+        <div class="background-image bg-snowy" id="bgSnowy"></div>
+        <div class="background-image bg-misty" id="bgMisty"></div>
+    </div>
 
-            <div class="loader" id="loader"></div>
+    <div class="weather-app">
+        <h1>WeatherWave</h1>
+        <div class="input-section">
+            <input type="text" id="locationInput" placeholder="Enter a City or Country">
+            <button id="getWeatherBtn">Search</button>
+        </div>
 
-            <div class="weather-display" id="weatherDisplay">
-                <p id="message">Enter a location to see the weather.</p>
-                <div id="weather-main" style="display: none;">
-                    <h2 id="locationName"></h2>
-                    <img id="weatherIcon" src="" alt="Weather Icon">
-                    <p id="temperature"></p>
-                    <p id="condition"></p>
-                    <div class="extra-info">
-                        <div class="info-item">
-                            <span>Feels Like</span>
-                            <span id="feelsLike"></span>
-                        </div>
-                        <div class="info-item">
-                            <span>Humidity</span>
-                            <span id="humidity"></span>
-                        </div>
-                        <div class="info-item">
-                            <span>Wind</span>
-                            <span id="windSpeed"></span>
-                        </div>
+        <div class="loader" id="loader"></div>
+
+        <div class="weather-display" id="weatherDisplay">
+            <p id="message">Enter a location to see the weather.</p>
+            <div id="weather-main" style="display: none;">
+                <h2 id="locationName"></h2>
+                <p id="localTime"></p> <img id="weatherIcon" src="" alt="Weather Icon">
+                <p id="temperature"></p>
+                <p id="condition"></p>
+                <div class="extra-info">
+                    <div class="info-item">
+                        <span>Feels Like</span>
+                        <span id="feelsLike"></span>
+                    </div>
+                    <div class="info-item">
+                        <span>Humidity</span>
+                        <span id="humidity"></span>
+                    </div>
+                    <div class="info-item">
+                        <span>Wind</span>
+                        <span id="windSpeed"></span>
                     </div>
                 </div>
             </div>
@@ -278,7 +309,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // --- DOM Element References ---
-            const weatherContainer = document.getElementById('weatherContainer');
+            const backgroundContainer = document.getElementById('backgroundContainer');
             const locationInput = document.getElementById('locationInput');
             const getWeatherBtn = document.getElementById('getWeatherBtn');
             const weatherDisplay = document.getElementById('weatherDisplay');
@@ -288,6 +319,7 @@
             
             // Weather Data Elements
             const locationName = document.getElementById('locationName');
+            const localTime = document.getElementById('localTime'); // New reference for local time
             const temperature = document.getElementById('temperature');
             const condition = document.getElementById('condition');
             const weatherIcon = document.getElementById('weatherIcon');
@@ -345,6 +377,7 @@
                     
                     // Update main weather info
                     locationName.textContent = `${data.location.name}, ${data.location.country}`;
+                    localTime.textContent = formatLocalTime(data.location.localtime); // Display local time
                     temperature.innerHTML = `${Math.round(data.current.temp_c)}<span>°C</span>`;
                     condition.textContent = data.current.condition.text;
                     weatherIcon.src = `https:${data.current.condition.icon}`;
@@ -372,24 +405,34 @@
                 weatherDisplay.classList.remove('visible');
             }
 
+            function formatLocalTime(datetimeString) {
+                const date = new Date(datetimeString);
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                return date.toLocaleDateString('en-US', options);
+            }
+
             function updateBackground(conditionText) {
                 const conditionLower = conditionText.toLowerCase();
-                // Reset classes
-                weatherContainer.className = 'weather-container'; 
                 
+                // Remove active class from all backgrounds first
+                document.querySelectorAll('.background-image').forEach(img => img.classList.remove('active'));
+
+                let activeBgClass = 'bg-default'; // Fallback
+
                 if (conditionLower.includes('sun') || conditionLower.includes('clear')) {
-                    weatherContainer.classList.add('sunny');
-                } else if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
-                    weatherContainer.classList.add('rainy');
+                    activeBgClass = 'bg-sunny';
+                } else if (conditionLower.includes('rain') || conditionLower.includes('drizzle') || conditionLower.includes('shower')) {
+                    activeBgClass = 'bg-rainy';
                 } else if (conditionLower.includes('cloud') || conditionLower.includes('overcast')) {
-                    weatherContainer.classList.add('cloudy');
-                } else if (conditionLower.includes('snow') || conditionLower.includes('sleet') || conditionLower.includes('ice')) {
-                    weatherContainer.classList.add('snowy');
+                    activeBgClass = 'bg-cloudy';
+                } else if (conditionLower.includes('snow') || conditionLower.includes('sleet') || conditionLower.includes('ice') || conditionLower.includes('blizzard')) {
+                    activeBgClass = 'bg-snowy';
                 } else if (conditionLower.includes('mist') || conditionLower.includes('fog')) {
-                    weatherContainer.classList.add('misty');
-                } else {
-                    weatherContainer.classList.add('default');
+                    activeBgClass = 'bg-misty';
                 }
+                
+                // Add active class to the selected background
+                document.getElementById(activeBgClass.replace('bg-', 'bg')).classList.add('active');
             }
         });
     </script>
