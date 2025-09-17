@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Weather App</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- General Setup & CSS Variables --- */
+        :root {
+            --primary-color: #ffffff;
+            --secondary-color: #e0e0e0;
+            --accent-color: #3498db;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--primary-color);
+            transition: background 0.8s ease-in-out;
+            overflow: hidden; /* Prevents scrollbars from appearing due to animations */
+        }
+
+        /* --- Dynamic Weather Background Container --- */
+        .weather-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* --- Default Background --- */
+        .weather-container.default {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+        }
+
+        /* --- Weather-Specific Animated Backgrounds --- */
+        .weather-container.sunny {
+            background: linear-gradient(45deg, #f39c12, #e74c3c);
+        }
+        .weather-container.cloudy {
+            background: linear-gradient(45deg, #7f8c8d, #34495e);
+        }
+        .weather-container.rainy {
+            background: linear-gradient(45deg, #2980b9, #34495e);
+        }
+        .weather-container.snowy {
+            background: linear-gradient(45deg, #bdc3c7, #7f8c8d);
+        }
+        .weather-container.misty {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+
+        /* --- Glassmorphism Weather Card --- */
+        .weather-app {
+            background: var(--glass-bg);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 var(--shadow-color);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            padding: 40px;
+            text-align: center;
+            width: 400px;
+            max-width: 95%;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeInCard 0.8s 0.2s forwards ease-out;
+        }
+
+        @keyframes fadeInCard {
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 600;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        /* --- Input Section --- */
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        #locationInput {
+            width: 100%;
+            padding: 12px 18px;
+            border: 1px solid transparent;
+            border-radius: 25px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--primary-color);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #locationInput::placeholder {
+            color: var(--secondary-color);
+        }
+
+        #locationInput:focus {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: var(--accent-color);
+        }
+
+        #getWeatherBtn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        #getWeatherBtn:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        /* --- Loading Spinner --- */
+        .loader {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid var(--primary-color);
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none; /* Hidden by default */
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* --- Weather Display Section --- */
+        .weather-display {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .weather-display.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        #message {
+            font-style: italic;
+            color: var(--secondary-color);
+            min-height: 24px;
+        }
+
+        #locationName {
+            font-size: 2.2em;
+            font-weight: 500;
+            margin: 10px 0 5px;
+        }
+
+        #temperature {
+            font-size: 4.5em;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1;
+        }
+
+        #condition {
+            font-size: 1.5em;
+            font-weight: 400;
+            text-transform: capitalize;
+            margin-bottom: 20px;
+        }
+
+        #weatherIcon {
+            width: 120px;
+            height: 120px;
+            filter: drop-shadow(5px 5px 8px rgba(0, 0, 0, 0.3));
+            animation: pulse-icon 3s infinite ease-in-out;
+        }
+        
+        @keyframes pulse-icon {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        /* --- Extra Weather Info --- */
+        .extra-info {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .info-item span:first-child {
+            font-weight: 300;
+            font-size: 0.9em;
+            color: var(--secondary-color);
+        }
+        
+        .info-item span:last-child {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+    </style>
+</head>
+<body>
+    
+    <div class="weather-container default" id="weatherContainer">
+        <div class="weather-app">
+            <h1>WeatherWave</h1>
+            <div class="input-section">
+                <input type="text" id="locationInput" placeholder="Enter a City or Country">
+                <button id="getWeatherBtn">Search</button>
+            </div>
+
+            <div class="loader" id="loader"></div>
+
+            <div class="weather-display" id="weatherDisplay">
+                <p id="message">Enter a location to see the weather.</p>
+                <div id="weather-main" style="display: none;">
+                    <h2 id="locationName"></h2>
+                    <img id="weatherIcon" src="" alt="Weather Icon">
+                    <p id="temperature"></p>
+                    <p id="condition"></p>
+                    <div class="extra-info">
+                        <div class="info-item">
+                            <span>Feels Like</span>
+                            <span id="feelsLike"></span>
+                        </div>
+                        <div class="info-item">
+                            <span>Humidity</span>
+                            <span id="humidity"></span>
+                        </div>
+                        <div class="info-item">
+                            <span>Wind</span>
+                            <span id="windSpeed"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Element References ---
+            const weatherContainer = document.getElementById('weatherContainer');
+            const locationInput = document.getElementById('locationInput');
+            const getWeatherBtn = document.getElementById('getWeatherBtn');
+            const weatherDisplay = document.getElementById('weatherDisplay');
+            const weatherMain = document.getElementById('weather-main');
+            const loader = document.getElementById('loader');
+            const message = document.getElementById('message');
+            
+            // Weather Data Elements
+            const locationName = document.getElementById('locationName');
+            const temperature = document.getElementById('temperature');
+            const condition = document.getElementById('condition');
+            const weatherIcon = document.getElementById('weatherIcon');
+            const feelsLike = document.getElementById('feelsLike');
+            const humidity = document.getElementById('humidity');
+            const windSpeed = document.getElementById('windSpeed');
+
+            // --- API Configuration (DO NOT CHANGE) ---
+            const API_KEY = 'd4f681d948e645d4a6b133556251309';  
+            const BASE_URL = 'https://api.weatherapi.com/v1/current.json';
+
+            // --- Event Listeners ---
+            getWeatherBtn.addEventListener('click', fetchWeatherData);
+            locationInput.addEventListener('keypress', (event) => {
+                if (event.key === 'Enter') {
+                    fetchWeatherData();
+                }
+            });
+
+            // --- Main Fetch Function ---
+            async function fetchWeatherData() {
+                const location = locationInput.value.trim();
+                if (!location) {
+                    showMessage('Please enter a location.');
+                    return;
+                }
+                
+                // Show loader and hide previous results
+                loader.style.display = 'block';
+                weatherDisplay.classList.remove('visible');
+                weatherMain.style.display = 'none';
+                showMessage('');
+
+                try {
+                    const response = await fetch(`${BASE_URL}?key=${API_KEY}&q=${location}&aqi=no`);
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.error.message);
+                    }
+                    const data = await response.json();
+                    displayWeather(data);
+                } catch (error) {
+                    showMessage(`Error: ${error.message}.`);
+                    console.error('Error fetching weather data:', error);
+                } finally {
+                    // Hide loader regardless of outcome
+                    loader.style.display = 'none';
+                }
+            }
+
+            // --- Display Weather Data ---
+            function displayWeather(data) {
+                if (data && data.location && data.current) {
+                    message.textContent = '';
+                    
+                    // Update main weather info
+                    locationName.textContent = `${data.location.name}, ${data.location.country}`;
+                    temperature.innerHTML = `${Math.round(data.current.temp_c)}<span>°C</span>`;
+                    condition.textContent = data.current.condition.text;
+                    weatherIcon.src = `https:${data.current.condition.icon}`;
+                    weatherIcon.alt = data.current.condition.text;
+                    
+                    // Update extra info
+                    feelsLike.innerHTML = `${Math.round(data.current.feelslike_c)}<span>°C</span>`;
+                    humidity.innerHTML = `${data.current.humidity}<span>%</span>`;
+                    windSpeed.innerHTML = `${data.current.wind_kph}<span> km/h</span>`;
+
+                    // Update background based on weather
+                    updateBackground(data.current.condition.text);
+                    
+                    // Animate the display into view
+                    weatherMain.style.display = 'block';
+                    weatherDisplay.classList.add('visible');
+                } else {
+                    showMessage('Could not retrieve weather data.');
+                }
+            }
+
+            // --- Helper Functions ---
+            function showMessage(msg) {
+                message.textContent = msg;
+                weatherDisplay.classList.remove('visible');
+            }
+
+            function updateBackground(conditionText) {
+                const conditionLower = conditionText.toLowerCase();
+                // Reset classes
+                weatherContainer.className = 'weather-container'; 
+                
+                if (conditionLower.includes('sun') || conditionLower.includes('clear')) {
+                    weatherContainer.classList.add('sunny');
+                } else if (conditionLower.includes('rain') || conditionLower.includes('drizzle')) {
+                    weatherContainer.classList.add('rainy');
+                } else if (conditionLower.includes('cloud') || conditionLower.includes('overcast')) {
+                    weatherContainer.classList.add('cloudy');
+                } else if (conditionLower.includes('snow') || conditionLower.includes('sleet') || conditionLower.includes('ice')) {
+                    weatherContainer.classList.add('snowy');
+                } else if (conditionLower.includes('mist') || conditionLower.includes('fog')) {
+                    weatherContainer.classList.add('misty');
+                } else {
+                    weatherContainer.classList.add('default');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
